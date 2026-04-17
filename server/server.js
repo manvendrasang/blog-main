@@ -2,11 +2,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
+import { nanoid } from 'nanoid';
+import jwt from 'jsonwebtoken';
 import User from './Schema/User.js';
 
 const server = express();
 
-let PORT =  3000;
+let PORT = 3000;
 
 let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // regex for email
 let passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/; // regex for password
@@ -17,38 +19,96 @@ mongoose.connect(process.env.DB_LOCATION, {
     autoIndex: true,
 });
 
+const formatDatatoSend = (user) => {
+    const access_token = jwt.sign({ id: user._id }, process.env.SECRET_ACCESS_KEY);
+    return {
+        profile_img: user.personal_info.profile_img,
+        fullname: user.personal_info.fullname,
+        username: user.personal_info.username,
+        access_token
+    }
+}
+
+const generateUsername = async (email) => {
+    let username = email.split("@")[0];
+    let isUsernameNotUnique = await User.exists({ "personal_info.username": username }).then((result) => result);
+    isUsernameNotUnique ? username += nanoid().substring(0, 5) : "";
+    return username;
+}
+
 server.post("/signup", (req, res) => {
     let { fullname, email, password } = req.body;
-    // validating the data from frontend
-    if(fullname.length < 3){
+    // validations
+    if (fullname.length < 3) {
         return res.status(403).json({ error: "Fullname must be at least 3 characters long" });
     }
-    if(!email.length){
+    if (!email.length) {
         return res.status(403).json({ error: "Enter Email" });
     }
-    if(!emailRegex.test(email)){
+    if (!emailRegex.test(email)) {
         return res.status(403).json({ error: "Enter Valid Email" });
     }
-    if(!passwordRegex.test(password)){
-        return res.status(403).json({ error: "Password must be between 6 to 20 characters and contain at least one numeric digit, one uppercase and one lowercase letter" });
+    if (!passwordRegex.test(password)) {
+        return res.status(403).json({
+            error: "Password must be between 6 to 20 characters and contain at least one numeric digit, one uppercase and one lowercase letter"
+        });
     }
-    bcrypt.hash(password, 10, (err, hashed_Password) => {
-        let username = email.split("@")[0];
+    bcrypt.hash(password, 10, async (err, hashed_Password) => {
+        let username = await generateUsername(email);
+        if (err) {
+            return res.status(500).json({ error: "Error hashing password" });
+        }
         let user = new User({
-            personal_info: { fullname, email, password: hashed_Password, username }
-        })
-        user.save().then((u) => {
-            return res.status(200).json({ user: u });
-        }).catch(err => {
-            if(err.code == 11000){
-                return res.status(500).json({ "error": "Email already exists" });
+            personal_info: {
+                fullname,
+                email,
+                password: hashed_Password,
+                username
             }
-            return res.status(500).json({ error: err.message });
-        })
+        });
+        user.save()
+            .then((u) => {
+                return res.status(200).json(formatDatatoSend(u));
+            })
+            .catch(err => {
+                if (err.code == 11000) {
+                    return res.status(400).json({ error: "Email already exists" });
+                }
+                return res.status(500).json({ error: err.message });
+            });
         console.log(hashed_Password);
     });
-    return res.status(200).json({ "status": "okay" });
-})
+});
+
+server.post("/signin", (req, res) => {
+    let { email, password } = req.body;
+    User.findOne({ "personal_info.email": email })
+        .then((user) => {
+            if (!user) {
+                return res.status(403).json({
+                    error: "Email not found"
+                });
+            }
+            bcrypt.compare(password, user.personal_info.password, (err, result) => {
+                if (err) {
+                    return res.status(500).json({
+                        error: "Error occurred while login"
+                    });
+                }
+                if (!result) {
+                    return res.status(403).json({
+                        error: "Incorrect password"
+                    });
+                }
+                return res.status(200).json(formatDatatoSend(user));
+            });
+        })
+        .catch(err => {
+            return res.status(500).json({
+                error: err.message
+            });
+        });
+});
 
 server.listen(PORT, () => {
     console.log('listening on port ' + PORT);
