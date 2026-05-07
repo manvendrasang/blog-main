@@ -1,45 +1,110 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import logo from '../imgs/logo.png';
+import { UserContext } from '../App';
+import UserNavigationPanel from './user-navigation.component.jsx';
 
 const Navbar = () => {
 
     const [searchBoxVisibility, setSearchBoxVisibility] = useState(false);
+    const [userNavPanel, setUserNavPanel] = useState(false);
+
+    const handleUserNavPanel = () => {
+        setUserNavPanel(currentVal => !currentVal);
+    }
+
+    const handleBlur = () => {
+        setTimeout(() => {
+            setUserNavPanel(false);
+        }, 200);
+    }
+
+    // Safe context access
+    const context = useContext(UserContext);
+
+    const userAuth = context?.userAuth || {};
+
+    const access_token = userAuth?.access_token;
+    const profile_img = userAuth?.profile_img;
 
     return (
         <>
             <nav className="navbar">
-
                 <Link to="/" className='flex-none w-10'>
-                    <img src={logo} className='w-full' />
+                    <img src={logo} className='w-full' alt="logo" />
                 </Link>
+                <div
+                    className={
+                        'absolute bg-white w-full left-0 top-full mt-0.5 border-b border-gray-200 py-4 px-[5vw] md:p-0 md:w-auto md:border-0 md:block md:relative md:inset-0 ' +
+                        (searchBoxVisibility ? 'show' : 'hide')
+                    }
+                >
+                    <input
+                        type="text"
+                        placeholder='Search...'
+                        className='w-full md:w-auto bg-grey p-4 pl-6 pr-[12%] md:pr-6 rounded-full md:pl-12 placeholder:text-dark-grey'
+                    />
 
-                <div className={'absolute bg-white w-full left-0 top-full mt-0.5 border-b border-gray-200 py-4 px-[5vw] md:p-0 md:w-auto md:border-0 md:block md:relative md:inset-0 md:show ' + (searchBoxVisibility ? 'show' : 'hide')}>
-                    <input type="text" placeholder='Search...' className='w-full md:w-auto bg-grey p-4 pl-6 pr-[12%] md:pr-6 rounded-full md:pl-12 placeholder:text-dark-grey' />
                     <i className="fi fi-rr-search absolute right-[10%] md:pointer-events-none md:left-5 top-1/2 -translate-y-1/2 text-xl text-dark-grey"></i>
                 </div>
-
                 <div className='flex items-center gap-3 md:gap-6 ml-auto'>
-                    <button className='md:hidden bg-grey w-12 h-12 rounded-full flex items-center justify-center' onClick={() => setSearchBoxVisibility(currentVal => !currentVal)}>
+                    <button
+                        className='md:hidden bg-grey w-12 h-12 rounded-full flex items-center justify-center'
+                        onClick={() =>
+                            setSearchBoxVisibility(currentVal => !currentVal)
+                        }
+                    >
                         <i className="fi fi-rr-search text-xl"></i>
                     </button>
                     <Link to="/editor" className='hidden md:flex gap-2 link'>
                         <i className="fi fi-rr-file-edit"></i>
                         <p>Write</p>
                     </Link>
-                    <Link to="/signin" className="btn-dark py-2">
-                        Sign In
-                    </Link>
-                    <Link to="/signup" className="btn-light py-2 hidden md:block">
-                        Sign Up
-                    </Link>
-                </div>
+                    {
+                        access_token ?
+                            <>
+                                <Link to="/dashboard/notification">
+                                    <button className='w-12 h-12 rounded-full bg-grey relative hover:bg-black/10'>
+                                        <i className="fi fi-rr-bell text-2xl block mt-1"></i>
+                                    </button>
+                                </Link>
+                                <div className='relative' onClick={handleUserNavPanel} onBlur={handleBlur}>
+                                    <button className='w-12 h-12 mt-1'>
+                                        {
+                                            profile_img ? (
+                                                <img
+                                                    src={profile_img}
+                                                    alt="profile"
+                                                    className='w-full h-full object-cover rounded-full'
+                                                />
+                                            ) : (
+                                                <div className='w-full h-full rounded-full bg-grey'></div>
+                                            )
+                                        }
+                                    </button>
+                                    {
+                                        userNavPanel ? <UserNavigationPanel />
+                                        : ""
+                                    }
+                                </div>
+                            </>
+                            :
+                            <>
+                                <Link to="/signin" className="btn-dark py-2">
+                                    Sign In
+                                </Link>
+                                <Link to="/signup" className="btn-light py-2 hidden md:block">
+                                    Sign Up
+                                </Link>
+                            </>
+                    }
 
+                </div>
             </nav>
 
             <Outlet />
         </>
-    )
+    );
 }
 
 export default Navbar;
