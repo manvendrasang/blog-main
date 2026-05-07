@@ -99,7 +99,7 @@ const UserAuthForm = ({ type }) => {
                     </div>
                     <button className="btn-dark flex items-center justify-center gap-2 w-[90%] center">
                         <img src={googleIcon} className="w-5" />
-                        continue with google
+                        Continue with Google
                     </button>
                     {
                         type == "sign-in" ?
