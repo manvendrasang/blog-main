@@ -4,6 +4,10 @@ import AnimationWrapper from "../common/page-animation"
 import defaultBanner from "../imgs/blog banner.png";
 
 const BlogEditor = () => {
+    const handleBannerUpload = (e) => {
+        let img = e.target.files[0];
+    }
+
     return (
         <>
             <nav className="navbar">
@@ -27,8 +31,8 @@ const BlogEditor = () => {
                     <div className="max-auto max-w-[900px] w-full">
                         <div className="relative aspect-video hover:opacity-80 bg-white border-4 border-grey">
                             <label htmlFor="uploadBanner">
-                                <img src={defaultBanner} className="object-cover w-full h-full" />
-                                <input id="uploadBanner" type="file" accept=".png, .jpg, .jpeg" hidden />
+                                <img src={defaultBanner} className="z-20" />
+                                <input id="uploadBanner" type="file" accept=".png, .jpg, .jpeg" hidden onChange={handleBannerUpload} />
                             </label>
                         </div>
                     </div>
