@@ -25,3 +25,8 @@ AWS S3 Bucket Setup
         "ExposedHeaders": []
     }
 ]
+
+> after this goto server.js in server folder and uncomment the aws code
+> then goto the aws website and search for IAM(Manage access to AWS resources)
+> goto policies-create policy-in the services choose s3-actions allowed(GetObeject, PutObject)-under resources select specific and click on Add ARNs(paste the ARN, click on any object name)-Add ARNs-click on next-give policy name-create policy
+> now goto Users in the same tab-create user-write a name-next-click on attach policies directly-search for the policy that you just created-check it-next-create user-click on the user just created-create access key-select other(you can select any option)-next-create access key, copy both the keys and paste it in .env

@@ -10,6 +10,8 @@ import admin from "firebase-admin";
 import serviceAccountKey from "./blog-space-20004-firebase-adminsdk-fbsvc-c1922ef603.json" with { type: "json" };
 import { getAuth } from "firebase-admin/auth";
 
+// import aws from 'aws-sdk';
+
 const server = express();
 
 let PORT = 3000;
@@ -27,6 +29,13 @@ admin.initializeApp({
 mongoose.connect(process.env.DB_LOCATION, {
     autoIndex: true,
 });
+
+// Setting up AWS S3 Bucket
+// const s3 = new aws.S3({
+//     region: 'ap-south-1',
+//     accessKeyId: process.env.AWS_ACCESS_KEY,
+//     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// })
 
 const formatDatatoSend = (user) => {
     const access_token = jwt.sign({ id: user._id }, process.env.SECRET_ACCESS_KEY);
